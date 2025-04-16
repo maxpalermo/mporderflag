@@ -1,0 +1,23 @@
+mporderflag_delete_flag:
+  path: mporderflag/{id_order}/delete-flag
+  methods: [POST]
+  defaults:
+    _controller: 'MpSoft\MpOrderFlag\Controllers\Admin\MpOrderFlagController::deleteFlagAction'
+  requirements:
+    id_order: \d+
+
+mporderflag_admin_get_flag:
+  path: mporderflag/{id_order}/get-flag
+  methods: [GET]
+  defaults:
+    _controller: 'MpSoft\MpOrderFlag\Controllers\Admin\MpOrderFlagController::getFlagAction'
+  requirements:
+    id_order: \d+
+
+mporderflag_admin_update_flag:
+  path: mporderflag/{id_order}/update-flag
+  methods: [POST]
+  defaults:
+    _controller: 'MpSoft\MpOrderFlag\Controllers\Admin\MpOrderFlagController::updateFlagAction'
+  requirements:
+    id_order: \d+
