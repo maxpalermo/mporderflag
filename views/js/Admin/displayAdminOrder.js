@@ -1,20 +1,8 @@
-async function getFlag() {
-    const response = await fetch(getFlagAction);
-    const data = await response.json();
-
-    if (data.status == true && data.record) {
-        const flagValue = data.record.id_order_flag;
-        const select = document.getElementById("order-flag-combo");
-        select.value = flagValue;
-        const select2 = $(select).data("select2");
-        select2.val(flagValue).trigger("change");
-    }
-}
-
-function updateSelectFlag() {
-    const select = document.getElementById("order-flag-combo");
-    const select2 = $(select).data("select2");
-    select2.val(currentFlag).trigger("change");
+function updateSelectFlag(selectStatusFlag) {
+    const value = currentFlag.id_order_flag_item ?? 0;
+    const color = currentFlag.color ?? "#70b580";
+    $(selectStatusFlag).val(value).trigger("change");
+    $(selectStatusFlag).closest("div.select-status").css("background-color", color);
 }
 
 async function updateFlag() {
@@ -36,7 +24,7 @@ async function updateFlag() {
 }
 
 document.addEventListener("updateOrderFlag", async (e) => {
-    const orderActions = document.querySelector(".order-actions");
+    const orderViewPage = document.getElementById("order-view-page");
 
     // Recupera i dati dal tag <script>
     const options = orderFlagOptions;
@@ -52,7 +40,11 @@ document.addEventListener("updateOrderFlag", async (e) => {
     selectStatus.style.color = "#fcfcfc";
     selectStatus.style.display = "flex";
     selectStatus.style.alignItems = "center";
-    selectStatus.style.justifyContent = "center";
+    selectStatus.style.justifyContent = "start";
+    selectStatus.style.height = "56px";
+    selectStatus.style.borderRadius = "5px";
+    selectStatus.style.border = "1px solid #70b580";
+    selectStatus.style.marginBottom = "2rem";
 
     selectFlag.innerHTML = "";
 
@@ -65,28 +57,50 @@ document.addEventListener("updateOrderFlag", async (e) => {
 
     // Crea il div container
     selectStatus.appendChild(selectFlag);
-
-    // Sostituisci o inserisci la select nel DOM (es. in un div con id="container")
-    orderActions.insertAdjacentElement("afterbegin", selectStatus);
+    orderViewPage.insertAdjacentElement("afterbegin", selectStatus);
 
     // Inizializza Select2
-    $(selectFlag).select2({
+    const selectStatusFlag = $(selectFlag).select2({
+        dropdownAutoWidth: true, // Permetti al dropdown di espandersi
         templateResult: formatOption,
         templateSelection: formatOption,
         escapeMarkup: (m) => m // Disabilita escape per Material Icons
     });
 
+    selectStatusFlag.next(".select2-container").css("margin-top", "24px");
+
     // Imposta il background del dropdown select2 a grigio chiaro
-    $(selectFlag).on("select2:open", function () {
-        $(".select2-results__options").css("background-color", "#FCFCFC").css("color", "#303030");
+    selectStatusFlag.on("select2:open", function () {
+        styleSelect2Options();
     });
 
     // Cambia dinamicamente il colore di background del container quando cambia opzione
-    $(selectFlag).on("select2:select", async (e) => {
+    selectStatusFlag.on("select2:select", async (e) => {
         const color = $(e.params.data.element).data("color");
         $("#select-status-flag").css("background-color", color || "#70b580");
         await updateFlag();
     });
+
+    function styleSelect2Options() {
+        // Stili per le opzioni dei risultati
+        $(".select2-results__option").css({
+            "white-space": "nowrap",
+            overflow: "hidden",
+            "text-overflow": "ellipsis",
+            "background-color": "#FCFCFC",
+            color: "#303030",
+            "font-size": "16px",
+            "line-height": "16px"
+        });
+
+        // Stili aggiuntivi per il contenitore del dropdown (opzionale)
+        $(".select2-dropdown").css({
+            "min-width": "300px", // Adatta al contenitore padre
+            "overflow-x": "hidden" // Previene scroll orizzontale
+        });
+
+        $(".select2-container").css("min-width", "300px");
+    }
 
     function formatOption(option) {
         if (!option.id) return option.text;
@@ -94,13 +108,25 @@ document.addEventListener("updateOrderFlag", async (e) => {
         const $wrapper = $("<div>");
 
         if (icon) {
-            $wrapper.append($("<i>").addClass("material-icons").text(icon).css({ "margin-right": "8px", "vertical-align": "middle" }));
+            $wrapper.append(
+                $("<i>").addClass("material-icons").text(icon).css({
+                    "margin-right": "8px",
+                    "vertical-align": "middle",
+                    "font-size": "2em"
+                })
+            );
         }
 
-        $wrapper.append(option.text);
+        $wrapper.append(
+            $("<span>").text(option.text).css({
+                "vertical-align": "middle",
+                "font-size": "2em"
+            })
+        );
         // Sfondo trasparente, nessun bordo o colore testo
         return $wrapper;
     }
 
-    updateSelectFlag();
+    styleSelect2Options();
+    updateSelectFlag(selectStatusFlag);
 });

@@ -94,6 +94,7 @@ class MpOrderFlag extends Module
                 'actionOrderGridDefinitionModifier',
                 'actionOrderGridQueryBuilderModifier',
                 'displayAdminOrder',
+                'displayAdminOrderTop',
             ])
             && $tableInstaller->createTable(ModelMpOrderFlag::$definition)
             && $tableInstaller->createTable(ModelMpOrderFlagItem::$definition);
@@ -145,12 +146,18 @@ class MpOrderFlag extends Module
         }
     }
 
-    public function hookDisplayAdminOrder($params)
+    public function hookDisplayAdminOrderTop($params)
     {
         $getActionUrl = new GetActionUrl($this->name, $this->adminClassName);
         $getFlagAction = $getActionUrl->getActionUrl('getFlag', ['id_order' => $params['id_order']]);
         $updateFlagAction = $getActionUrl->getActionUrl('updateFlag', ['id_order' => $params['id_order']]);
-        $currentFlag = ModelMpOrderFlag::getIdOrderFlag($params['id_order']);
+        $orderFlag = new \ModelMpOrderFlag($params['id_order']);
+        if (Validate::isLoadedObject($orderFlag)) {
+            $flag = new ModelMpOrderFlagItem($orderFlag->id_order_flag);
+            $currentFlag = json_encode($flag->getFields());
+        } else {
+            $currentFlag = json_encode([]);
+        }
 
         $options = json_encode($this->getComboFlagOptions());
 
@@ -159,13 +166,18 @@ class MpOrderFlag extends Module
             const getFlagAction = "{$getFlagAction}";
             const updateFlagAction = "{$updateFlagAction}";
             const orderFlagOptions = {$options};
-            let currentFlag = "{$currentFlag}";
+            const currentFlag = {$currentFlag};
             const event = new CustomEvent('updateOrderFlag', { detail: { idOrder: "{$params['id_order']}" } });
             document.dispatchEvent(event);
         </script>
         JS;
 
         return $script;
+    }
+
+    public function hookDisplayAdminOrder($params)
+    {
+        // nothing
     }
 
     protected function getComboFlagOptions()
