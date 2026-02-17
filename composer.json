@@ -1,4 +1,5 @@
 {
+    "version": "1.0",
     "name": "mpsoft/mporderflag",
     "description": "Gestione Stato ordine con icona",
     "authors": [
@@ -8,19 +9,15 @@
         }
     ],
     "require": {
-        "php": ">=7.4.0",
-        "prestashop/prestashop-webservice-lib": "dev-master"
+        "php": ">=7.4.0"
     },
     "autoload": {
         "psr-4": {
-            "MpSoft\\MpOrderFlag\\": "src/",
-            "MpSoft\\MpOrderFlag\\WebServices\\": "vendor/prestashop/"
+            "MpSoft\\MpOrderFlag\\": "src/"
         },
         "classmap": [],
         "exclude-from-classmap": [],
-        "files": [
-            "vendor/prestashop/prestashop-webservice-lib/PSWebServiceLibrary.php"
-        ]
+        "files": []
     },
     "config": {
         "preferred-install": "dist",

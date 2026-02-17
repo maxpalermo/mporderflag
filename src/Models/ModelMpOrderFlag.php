@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -17,45 +18,43 @@
  * @copyright Since 2016 Massimiliano Palermo
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
-class ModelMpOrderFlagItem extends ObjectModel
+
+namespace MpSoft\MpOrderFlag\Models;
+
+use Db;
+use DbQuery;
+use ObjectModel;
+
+class ModelMpOrderFlag extends ObjectModel
 {
+    public $id_order;
     public $id_order_flag;
-    public $name;
-    public $icon;
-    public $color;
+    public $id_employee;
     public $date_add;
     public $date_upd;
     protected $module;
 
     public static $definition = [
-        'table' => 'order_flag_item',
-        'primary' => 'id_order_flag_item',
+        'table' => 'order_flag',
+        'primary' => 'id_order',
         'multilang' => false,
         'multishop' => false,
         'fields' => [
-            'name' => [
-                'type' => self::TYPE_STRING,
-                'validate' => 'isString',
-                'size' => 64,
+            'id_order_flag' => [
+                'type' => self::TYPE_INT,
+                'validate' => 'isUnsignedId',
                 'required' => true,
             ],
-            'icon' => [
-                'type' => self::TYPE_STRING,
-                'validate' => 'isString',
-                'size' => 64,
-                'required' => true,
-            ],
-            'color' => [
-                'type' => self::TYPE_STRING,
-                'validate' => 'isString',
-                'size' => 7,
-                'required' => true,
+            'id_employee' => [
+                'type' => self::TYPE_INT,
+                'validate' => 'isUnsignedId',
+                'required' => false,
             ],
             'date_add' => [
                 'type' => self::TYPE_DATE,
                 'validate' => 'isDate',
                 'datetime' => true,
-                'required' => true,
+                'required' => false,
             ],
             'date_upd' => [
                 'type' => self::TYPE_DATE,
@@ -66,19 +65,15 @@ class ModelMpOrderFlagItem extends ObjectModel
         ],
     ];
 
-    public static function getList()
+    public static function getCurrentFlagId($id_order)
     {
         $db = Db::getInstance();
         $sql = new DbQuery();
+        $sql
+            ->select('id_order_flag')
+            ->from(self::$definition['table'])
+            ->where('id_order = ' . (int) $id_order);
 
-        $sql->select('*')
-            ->from(ModelMpOrderFlagItem::$definition['table'])
-            ->orderBy(ModelMpOrderFlagItem::$definition['primary']);
-        $rows = $db->executeS($sql);
-        if (!$rows) {
-            $rows = [];
-        }
-
-        return $rows;
+        return (int) $db->getValue($sql);
     }
 }

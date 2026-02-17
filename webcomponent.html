@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Flag Web Component</title>
+    
+    <!-- Material Icons e jQuery per growl -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-growl/1.3.5/jquery.growl.min.css"/>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-growl/1.3.5/jquery.growl.min.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #70b580;
+            padding-bottom: 10px;
+        }
+        
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .event-log {
+            background: #2d2d2d;
+            color: #00ff00;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 8px;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        
+        /* Stile per il dialog modale */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .modal-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .flag-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .flag-option:hover {
+            transform: translateX(5px);
+            border-color: #007bff;
+        }
+        
+        .flag-option .material-icons {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+        
+        .flag-option .flag-name {
+            flex: 1;
+            font-weight: bold;
+        }
+        
+        .flag-option .flag-id {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .selected-badge {
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚩 Order Flag Web Component</h1>
+        
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <p><strong>🎯 Caratteristiche:</strong></p>
+            <ul>
+                <li>✅ Visualizzazione stato con colore, icona e label</li>
+                <li>✅ Click apre dialog modale con opzioni da JSON</li>
+                <li>✅ Invio AJAX per aggiornamento stato</li>
+                <li>✅ Notifiche growl per feedback utente</li>
+                <li>✅ Supporto attributi e data-*</li>
+            </ul>
+        </div>
+        
+        <!-- Demo 1: Flag base -->
+        <div class="demo-section">
+            <h3>🔰 Demo 1: Flag base (OK)</h3>
+            <order-flag 
+                id="flag1"
+                flag-id="1"
+                endpoint="https://httpbin.org/post"
+                data-order-id="1001"
+                data-user="demo">
+            </order-flag>
+        </div>
+        
+        <!-- Demo 2: Flag con stato personalizzato -->
+        <div class="demo-section">
+            <h3>⚠️ Demo 2: Flag personalizzato (ATTENZIONE)</h3>
+            <order-flag 
+                id="flag2"
+                flag-id="2"
+                background-color="#e9bd0c"
+                icon="warning"
+                label="ATTENZIONE"
+                endpoint="https://httpbin.org/post"
+                data-order-id="1002">
+            </order-flag>
+        </div>
+        
+        <!-- Demo 3: Flag errore -->
+        <div class="demo-section">
+            <h3>❌ Demo 3: Flag errore</h3>
+            <order-flag 
+                id="flag3"
+                flag-id="3"
+                background-color="#f54c3e"
+                icon="error"
+                label="ERRORE"
+                endpoint="https://httpbin.org/post">
+            </order-flag>
+        </div>
+        
+        <!-- Event Log -->
+        <div style="margin-top: 30px;">
+            <h3>📋 Event Log</h3>
+            <div class="event-log" id="eventLog">
+                <div>👆 Clicca sui flag per vedere gli eventi...</div>
+            </div>
+            <button onclick="clearLog()" style="margin-top: 10px; padding: 5px 10px;">Pulisci Log</button>
+        </div>
+    </div>
+
+    <script>
+        // Dati degli stati (dal JSON fornito)
+        const FLAG_DATA = {
+            "1": {
+                id: "1",
+                name: "OK",
+                icon: "verified",
+                color: "#70b580"
+            },
+            "2": {
+                id: "2",
+                name: "ATTENZIONE",
+                icon: "warning",
+                color: "#e9bd0c"
+            },
+            "3": {
+                id: "3",
+                name: "ERRORE",
+                icon: "error",
+                color: "#f54c3e"
+            },
+            "4": {
+                id: "4",
+                name: "VERIFICA PAGAMENTO",
+                icon: "credit_score",
+                color: "#25b9d7"
+            }
+        };
+
+        // Web Component OrderFlag
+        class OrderFlag extends HTMLElement {
+            static get observedAttributes() {
+                return ['flag-id', 'background-color', 'icon', 'label', 'endpoint'];
+            }
+
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+                
+                // Stato interno
+                this._flagId = this.getAttribute('flag-id') || '1';
+                this._backgroundColor = this.getAttribute('background-color') || '#70b580';
+                this._icon = this.getAttribute('icon') || 'verified';
+                this._label = this.getAttribute('label') || 'OK';
+                this._endpoint = this.getAttribute('endpoint') || '';
+                
+                this.render();
+                this.attachEvents();
+            }
+
+            render() {
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        :host {
+                            display: block;
+                            cursor: pointer;
+                            transition: transform 0.2s;
+                        }
+                        
+                        :host(:hover) {
+                            transform: scale(1.02);
+                        }
+                        
+                        .flag-container {
+                            width: 100%;
+                            font-size: 2em;
+                            padding: 1rem;
+                            margin: 0 auto;
+                            text-align: center;
+                            background-color: ${this._backgroundColor};
+                            color: #FCFCFC;
+                            border-radius: 8px;
+                            box-sizing: border-box;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 10px;
+                            transition: background-color 0.3s;
+                        }
+                        
+                        .material-icons {
+                            font-size: 1.5em;
+                        }
+                        
+                        /* Modal styles (iniettati nello shadow DOM) */
+                        .modal-overlay {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(0,0,0,0.5);
+                            display: none;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 1000;
+                        }
+                        
+                        .modal-overlay.open {
+                            display: flex;
+                        }
+                        
+                        .modal-content {
+                            background: white;
+                            border-radius: 12px;
+                            padding: 25px;
+                            max-width: 500px;
+                            width: 90%;
+                            max-height: 80vh;
+                            overflow-y: auto;
+                            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                        }
+                        
+                        .modal-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 20px;
+                            padding-bottom: 10px;
+                            border-bottom: 2px solid #f0f0f0;
+                        }
+                        
+                        .modal-header h3 {
+                            margin: 0;
+                            color: #333;
+                            font-size: 1.5rem;
+                        }
+                        
+                        .modal-close {
+                            cursor: pointer;
+                            font-size: 28px;
+                            color: #999;
+                            transition: color 0.2s;
+                        }
+                        
+                        .modal-close:hover {
+                            color: #333;
+                        }
+                        
+                        .flag-option {
+                            display: flex;
+                            align-items: center;
+                            padding: 15px;
+                            margin: 10px 0;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            border: 2px solid transparent;
+                            background: #f8f9fa;
+                        }
+                        
+                        .flag-option:hover {
+                            transform: translateX(5px);
+                            border-color: #007bff;
+                            background: #f1f3f5;
+                        }
+                        
+                        .flag-option.current {
+                            border-color: #28a745;
+                            background: #d4edda;
+                        }
+                        
+                        .flag-option .material-icons {
+                            margin-right: 15px;
+                            font-size: 28px;
+                        }
+                        
+                        .flag-option .flag-name {
+                            flex: 1;
+                            font-weight: bold;
+                            font-size: 1.1rem;
+                        }
+                        
+                        .flag-option .flag-id {
+                            color: #666;
+                            font-size: 0.85rem;
+                            background: #e9ecef;
+                            padding: 2px 8px;
+                            border-radius: 12px;
+                        }
+                        
+                        .current-badge {
+                            background: #28a745;
+                            color: white;
+                            padding: 4px 12px;
+                            border-radius: 20px;
+                            font-size: 0.8rem;
+                            margin-left: 10px;
+                        }
+                        
+                        .loading {
+                            opacity: 0.6;
+                            pointer-events: none;
+                        }
+                        
+                        .spinner {
+                            display: inline-block;
+                            width: 20px;
+                            height: 20px;
+                            border: 3px solid rgba(255,255,255,.3);
+                            border-radius: 50%;
+                            border-top-color: white;
+                            animation: spin 1s ease-in-out infinite;
+                        }
+                        
+                        @keyframes spin {
+                            to { transform: rotate(360deg); }
+                        }
+                    </style>
+                    
+                    <div class="flag-container" id="flagContainer">
+                        <i class="material-icons" id="flagIcon">${this._icon}</i>
+                        <span id="flagLabel">${this._label}</span>
+                    </div>
+                    
+                    <!-- Modal -->
+                    <div class="modal-overlay" id="modalOverlay">
+                        <div class="modal-content" id="modalContent">
+                            <div class="modal-header">
+                                <h3>Seleziona nuovo stato</h3>
+                                <span class="modal-close" id="modalClose">&times;</span>
+                            </div>
+                            <div id="modalOptions" class="modal-options"></div>
+                        </div>
+                    </div>
+                `;
+
+                this.flagContainer = this.shadowRoot.getElementById('flagContainer');
+                this.flagIcon = this.shadowRoot.getElementById('flagIcon');
+                this.flagLabel = this.shadowRoot.getElementById('flagLabel');
+                this.modalOverlay = this.shadowRoot.getElementById('modalOverlay');
+                this.modalOptions = this.shadowRoot.getElementById('modalOptions');
+                this.modalClose = this.shadowRoot.getElementById('modalClose');
+            }
+
+            attachEvents() {
+                // Click sul flag apre il modal
+                this.flagContainer.addEventListener('click', () => {
+                    this.openModal();
+                });
+
+                // Chiusura modal
+                this.modalClose.addEventListener('click', () => {
+                    this.closeModal();
+                });
+
+                // Click fuori dal modal lo chiude
+                this.modalOverlay.addEventListener('click', (e) => {
+                    if (e.target === this.modalOverlay) {
+                        this.closeModal();
+                    }
+                });
+            }
+
+            openModal() {
+                this.renderModalOptions();
+                this.modalOverlay.classList.add('open');
+                
+                this.logEvent('modal-opened', { currentId: this._flagId });
+            }
+
+            closeModal() {
+                this.modalOverlay.classList.remove('open');
+            }
+
+            renderModalOptions() {
+                let html = '';
+                
+                Object.values(FLAG_DATA).forEach(flag => {
+                    const isCurrent = flag.id === this._flagId;
+                    const backgroundColor = flag.color;
+                    
+                    html += `
+                        <div class="flag-option ${isCurrent ? 'current' : ''}" 
+                             data-flag-id="${flag.id}"
+                             data-flag-color="${flag.color}"
+                             data-flag-icon="${flag.icon}"
+                             data-flag-name="${flag.name}"
+                             style="border-left: 4px solid ${backgroundColor};">
+                            <i class="material-icons" style="color: ${backgroundColor};">${flag.icon}</i>
+                            <span class="flag-name">${flag.name}</span>
+                            <span class="flag-id">ID: ${flag.id}</span>
+                            ${isCurrent ? '<span class="current-badge">Corrente</span>' : ''}
+                        </div>
+                    `;
+                });
+                
+                this.modalOptions.innerHTML = html;
+                
+                // Aggiungi event listener alle opzioni
+                this.modalOptions.querySelectorAll('.flag-option').forEach(option => {
+                    option.addEventListener('click', async () => {
+                        const flagId = option.dataset.flagId;
+                        if (flagId !== this._flagId) {
+                            await this.updateFlag(flagId);
+                        }
+                    });
+                });
+            }
+
+            async updateFlag(newFlagId) {
+                const newFlag = FLAG_DATA[newFlagId];
+                if (!newFlag) return;
+                
+                // Mostra loading
+                this.flagContainer.classList.add('loading');
+                this.flagContainer.innerHTML = '<span class="spinner"></span> Aggiornamento...';
+                
+                try {
+                    // Prepara dati per l'invio
+                    const updateData = {
+                        flag_id: newFlagId,
+                        old_flag_id: this._flagId,
+                        name: newFlag.name,
+                        icon: newFlag.icon,
+                        color: newFlag.color,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    // Aggiungi data attributes
+                    for (let key in this.dataset) {
+                        updateData[`data_${key}`] = this.dataset[key];
+                    }
+                    
+                    // Invia richiesta AJAX
+                    const response = await fetch(this._endpoint || 'https://httpbin.org/post', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // Aggiorna lo stato locale
+                    this._flagId = newFlagId;
+                    this._backgroundColor = newFlag.color;
+                    this._icon = newFlag.icon;
+                    this._label = newFlag.name;
+                    
+                    // Aggiorna la UI
+                    this.flagContainer.style.backgroundColor = newFlag.color;
+                    this.flagIcon.textContent = newFlag.icon;
+                    this.flagLabel.textContent = newFlag.name;
+                    
+                    // Chiudi il modal
+                    this.closeModal();
+                    
+                    // Emetti evento
+                    this.dispatchEvent(new CustomEvent('flag-changed', {
+                        detail: updateData,
+                        bubbles: true,
+                        composed: true
+                    }));
+                    
+                    // Mostra notifica growl
+                    this.showGrowl('success', `Stato aggiornato a "${newFlag.name}"`);
+                    
+                    this.logEvent('flag-updated', updateData);
+                    
+                } catch (error) {
+                    console.error('Errore aggiornamento:', error);
+                    
+                    // Ripristina UI
+                    this.updateUIFromCurrentState();
+                    
+                    // Mostra errore
+                    this.showGrowl('error', `Errore: ${error.message}`);
+                    
+                    this.logEvent('flag-error', { error: error.message });
+                    
+                } finally {
+                    this.flagContainer.classList.remove('loading');
+                }
+            }
+
+            updateUIFromCurrentState() {
+                this.flagContainer.style.backgroundColor = this._backgroundColor;
+                this.flagIcon.textContent = this._icon;
+                this.flagLabel.textContent = this._label;
+            }
+
+            showGrowl(type, message) {
+                if (window.$.growl) {
+                    $.growl({
+                        message: message
+                    }, {
+                        type: type,
+                        duration: 3000,
+                        placement: {
+                            from: 'top',
+                            align: 'center'
+                        }
+                    });
+                } else {
+                    alert(message);
+                }
+            }
+
+            attributeChangedCallback(name, oldValue, newValue) {
+                if (oldValue === newValue) return;
+                
+                switch(name) {
+                    case 'flag-id':
+                        this._flagId = newValue;
+                        const flagData = FLAG_DATA[newValue];
+                        if (flagData) {
+                            this._backgroundColor = flagData.color;
+                            this._icon = flagData.icon;
+                            this._label = flagData.name;
+                            this.updateUIFromCurrentState();
+                        }
+                        break;
+                        
+                    case 'background-color':
+                        this._backgroundColor = newValue;
+                        this.flagContainer.style.backgroundColor = newValue;
+                        break;
+                        
+                    case 'icon':
+                        this._icon = newValue;
+                        this.flagIcon.textContent = newValue;
+                        break;
+                        
+                    case 'label':
+                        this._label = newValue;
+                        this.flagLabel.textContent = newValue;
+                        break;
+                        
+                    case 'endpoint':
+                        this._endpoint = newValue;
+                        break;
+                }
+            }
+
+            logEvent(type, data) {
+                this.dispatchEvent(new CustomEvent('flag-log', {
+                    detail: { type, data, timestamp: new Date().toLocaleTimeString() }
+                }));
+            }
+
+            // Metodi pubblici
+            get currentFlag() {
+                return {
+                    id: this._flagId,
+                    name: this._label,
+                    icon: this._icon,
+                    color: this._backgroundColor
+                };
+            }
+
+            setFlagById(flagId) {
+                if (FLAG_DATA[flagId]) {
+                    this.updateFlag(flagId);
+                }
+            }
+        }
+
+        // Registrazione del componente
+        customElements.define('order-flag', OrderFlag);
+
+        // Gestione Event Log
+        const eventLog = document.getElementById('eventLog');
+
+        document.querySelectorAll('order-flag').forEach(flag => {
+            flag.addEventListener('flag-changed', (e) => {
+                addLog('🎯 FLAG CAMBIATO', e.detail);
+            });
+            
+            flag.addEventListener('flag-log', (e) => {
+                addLog(`📌 ${e.detail.type}`, e.detail.data);
+            });
+        });
+
+        function addLog(prefix, data) {
+            const entry = document.createElement('div');
+            entry.style.margin = '2px 0';
+            entry.style.padding = '2px 0';
+            entry.style.borderBottom = '1px solid #444';
+            
+            const time = new Date().toLocaleTimeString();
+            let text = `[${time}] ${prefix}`;
+            
+            if (data) {
+                text += `: ${JSON.stringify(data).substring(0, 100)}`;
+            }
+            
+            entry.textContent = text;
+            eventLog.appendChild(entry);
+            eventLog.scrollTop = eventLog.scrollHeight;
+        }
+
+        function clearLog() {
+            eventLog.innerHTML = '<div>👆 Clicca sui flag per vedere gli eventi...</div>';
+        }
+
+        // Esempio di utilizzo con endpoint reale
+        // In un ambiente reale, sostituirei con il proprio endpoint
+        console.log('OrderFlag component ready!');
+    </script>
+
+    <!-- Istruzioni per l'uso -->
+    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h3>📚 Come usare il componente OrderFlag</h3>
+        
+        <h4>Attributi:</h4>
+        <ul>
+            <li><code>flag-id</code>: ID dello stato (1-4)</li>
+            <li><code>background-color</code>: colore di sfondo (opzionale, sovrascrive il default)</li>
+            <li><code>icon</code>: icona Material Icons (opzionale)</li>
+            <li><code>label</code>: testo da visualizzare (opzionale)</li>
+            <li><code>endpoint</code>: URL per l'invio AJAX</li>
+            <li><code>data-*</code>: attributi personalizzati (inclusi nella richiesta)</li>
+        </ul>
+        
+        <h4>Esempi di utilizzo:</h4>
+        <pre style="background: white; padding: 10px; border-radius: 4px;">
+&lt;!-- Utilizzo base con ID --&gt;
+&lt;order-flag flag-id="1" endpoint="/api/update-flag"&gt;&lt;/order-flag&gt;
+
+&lt;!-- Con attributi personalizzati --&gt;
+&lt;order-flag 
+    flag-id="2"
+    endpoint="/api/update-flag"
+    data-order-id="12345"
+    data-user="admin"&gt;
+&lt;/order-flag&gt;
+
+&lt;!-- Sovrascrittura manuale --&gt;
+&lt;order-flag 
+    background-color="#ff0000"
+    icon="favorite"
+    label="CUSTOM"
+    endpoint="/api/update-flag"&gt;
+&lt;/order-flag&gt;
+
+&lt;script&gt;
+    // Ascoltare gli eventi
+    document.querySelector('order-flag').addEventListener('flag-changed', (e) => {
+        console.log('Flag cambiato:', e.detail);
+    });
+    
+    // Metodi pubblici
+    const flag = document.querySelector('order-flag');
+    console.log('Stato corrente:', flag.currentFlag);
+    flag.setFlagById('3'); // Cambia stato programmaticamente
+&lt;/script&gt;
+        </pre>
+        
+        <h4>Dati inviati all'endpoint:</h4>
+        <pre style="background: white; padding: 10px; border-radius: 4px;">
+{
+    "flag_id": "3",
+    "old_flag_id": "1",
+    "name": "ERRORE",
+    "icon": "error",
+    "color": "#f54c3e",
+    "timestamp": "2024-01-01T12:00:00.000Z",
+    "data_order_id": "12345",
+    "data_user": "admin"
+}
+        </pre>
+    </div>
+</body>
+</html>
